@@ -1,0 +1,121 @@
+-- LocalScript
+local player = game.Players.LocalPlayer
+local uis = game:GetService("UserInputService")
+local runService = game:GetService("RunService")
+
+-- overlay gui
+local gui = Instance.new("ScreenGui")
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 999999
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- main cursor image
+local img = Instance.new("ImageLabel")
+img.BackgroundTransparency = 1
+img.Image = "rbxassetid://11722255218"
+img.Size = UDim2.fromOffset(32, 32)
+img.ZIndex = 2
+img.Parent = gui
+
+-- spin parameters
+local baseSpeed = 144 -- 4 spins per 10s
+local burstSpeed = 1800 -- 5 spins/sec
+local burstDuration = 5
+local transitionDuration = 2
+local rotationsUntilBurstMin = 5
+local rotationsUntilBurstMax = 10
+
+local angle = 0
+local currentSpeed = baseSpeed
+local burstActive = false
+local burstTimer = 0
+local transitionTimer = 0
+local rotationsDone = 0
+local targetRotations = math.random(rotationsUntilBurstMin, rotationsUntilBurstMax)
+
+-- particle spawner
+local function spawnParticle(x, y)
+    local p = Instance.new("ImageLabel")
+    p.BackgroundTransparency = 1
+    p.Image = "rbxassetid://130337564022672"
+    p.Size = UDim2.fromOffset(32/3, 32/3)
+    p.Position = UDim2.fromOffset(x - p.Size.X.Offset/2, y - p.Size.Y.Offset/2)
+    p.ZIndex = 1
+    p.Parent = gui
+
+    -- random direction
+    local dir = Vector2.new(math.random() - 0.5, math.random() - 0.5).Unit
+    local distance = 32 * 4 -- 4 cursor widths
+    local lifetime = 1.5 -- seconds
+
+    local elapsed = 0
+    runService.RenderStepped:Connect(function(dt)
+        if not p.Parent then return end
+        if elapsed >= lifetime then
+            p:Destroy()
+            return
+        end
+        elapsed += dt
+        local alpha = elapsed / lifetime
+        local offset = dir * distance * alpha
+        p.Position = UDim2.fromOffset(x + offset.X - p.Size.X.Offset/2, y + offset.Y - p.Size.Y.Offset/2)
+        p.ImageTransparency = alpha
+    end)
+end
+
+-- main loop
+runService.RenderStepped:Connect(function(dt)
+    local pos = uis:GetMouseLocation()
+    img.Position = UDim2.fromOffset(pos.X - img.Size.X.Offset/2, pos.Y - img.Size.Y.Offset/2)
+
+    -- rotation
+    angle = (angle + currentSpeed * dt) % 360
+    img.Rotation = angle
+
+    -- count rotations only outside burst
+    if not burstActive then
+        rotationsDone += (currentSpeed * dt) / 360
+    end
+
+    -- trigger burst
+    if not burstActive and rotationsDone >= targetRotations then
+        burstActive = true
+        rotationsDone = 0
+        targetRotations = math.random(rotationsUntilBurstMin, rotationsUntilBurstMax)
+        transitionTimer = 0
+        burstTimer = 0
+    end
+
+    if burstActive then
+        if transitionTimer < transitionDuration then
+            -- accelerate
+            transitionTimer += dt
+            local alpha = math.clamp(transitionTimer / transitionDuration, 0, 1)
+            currentSpeed = baseSpeed + (burstSpeed - baseSpeed) * alpha
+        elseif burstTimer < burstDuration then
+            -- sustain burst
+            burstTimer += dt
+            currentSpeed = burstSpeed
+
+            -- spawn particles evenly across 5s sustain
+            local interval = burstDuration / 15 -- ~0.333s between spawns
+            if burstTimer % interval < dt then
+                spawnParticle(pos.X, pos.Y)
+            end
+        elseif transitionTimer < transitionDuration * 2 then
+            -- decelerate
+            transitionTimer += dt
+            local alpha = math.clamp((transitionTimer - transitionDuration) / transitionDuration, 0, 1)
+            currentSpeed = burstSpeed + (baseSpeed - burstSpeed) * alpha
+        else
+            -- reset
+            burstActive = false
+            burstTimer = 0
+            transitionTimer = 0
+            currentSpeed = baseSpeed
+        end
+    else
+        currentSpeed = baseSpeed
+    end
+end)
