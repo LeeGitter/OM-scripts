@@ -13,7 +13,7 @@ local busy = false
 local flyAnimId = "rbxassetid://120901692290619"
 local slideAnimId = "rbxassetid://87923794409601"
 
-local dashSpeed = 35 -- studs/sec
+local dashSpeed = 78 -- studs/sec
 local maxRange = 150 -- updated range
 
 local function horizontalDistance(a, b)
