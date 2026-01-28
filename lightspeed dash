@@ -1,0 +1,118 @@
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+local root = char:WaitForChild("HumanoidRootPart")
+
+local ring = nil
+local busy = false
+
+local flyAnimId = "rbxassetid://120901692290619"
+local slideAnimId = "rbxassetid://87923794409601"
+
+local dashSpeed = 35 -- studs/sec
+local maxRange = 150 -- updated range
+
+local function horizontalDistance(a, b)
+    local da = Vector2.new(a.X, a.Z)
+    local db = Vector2.new(b.X, b.Z)
+    return (da - db).Magnitude
+end
+
+local function createRing(pos)
+    local r = Instance.new("MeshPart")
+    r.MeshId = "rbxassetid://3270017" -- torus mesh
+    r.TextureID = ""
+    r.Size = Vector3.new(6, 6, 1)
+    r.Color = Color3.fromRGB(255, 220, 0)
+    r.Material = Enum.Material.Neon
+    r.Anchored = true
+    r.CanCollide = false
+    r.CFrame = CFrame.new(pos)
+    r.Parent = workspace
+
+    task.spawn(function()
+        while r.Parent do
+            r.CFrame = r.CFrame * CFrame.Angles(0, math.rad(4), 0)
+            RunService.RenderStepped:Wait()
+        end
+    end)
+
+    return r
+end
+
+local function playAnim(id)
+    local anim = Instance.new("Animation")
+    anim.AnimationId = id
+    local track = hum:LoadAnimation(anim)
+    track.Priority = Enum.AnimationPriority.Action
+    track.Looped = true
+    track:Play()
+    return track
+end
+
+local function dashToRing(ringPos)
+    while (root.Position - ringPos).Magnitude > 2 do
+        local pos = root.Position
+        local dir = (ringPos - pos).Unit
+        local dt = RunService.RenderStepped:Wait()
+
+        root.CFrame = CFrame.new(pos + dir * (dashSpeed * dt), ringPos)
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+end
+
+local function slidePastRing()
+    local slideTrack = playAnim(slideAnimId)
+
+    local start = root.Position
+    local forward = root.CFrame.LookVector
+    local finish = start + forward * 25 -- updated distance
+    local duration = 1 -- updated duration
+    local t0 = tick()
+
+    while tick() - t0 < duration do
+        local alpha = (tick() - t0) / duration
+        local newPos = start:Lerp(finish, alpha)
+        root.CFrame = CFrame.new(newPos, newPos + forward)
+        root.AssemblyLinearVelocity = Vector3.zero
+        RunService.RenderStepped:Wait()
+    end
+
+    if slideTrack then slideTrack:Stop() end
+end
+
+local function flySequence()
+    if not ring or busy then return end
+    busy = true
+
+    local ringPos = ring.Position
+    local flyTrack = playAnim(flyAnimId)
+
+    dashToRing(ringPos)
+
+    if flyTrack then flyTrack:Stop() end
+
+    slidePastRing()
+
+    if ring then ring:Destroy() end
+    ring = nil
+    busy = false
+end
+
+UIS.InputBegan:Connect(function(input, gp)
+    if gp or input.KeyCode ~= Enum.KeyCode.R then return end
+
+    if not ring then
+        ring = createRing(root.Position)
+        return
+    end
+
+    if horizontalDistance(root.Position, ring.Position) <= maxRange then
+        flySequence()
+    end
+end)
