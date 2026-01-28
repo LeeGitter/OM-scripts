@@ -1,0 +1,146 @@
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local busy = false
+
+local risingHeight = 15
+local risingTime = 0.3
+local flySpeed = 150 -- 3x speed
+local stopDist = 2
+local followDuration = 2 -- seconds
+
+local function getChar()
+    local c = player.Character
+    if not c or not c.Parent then
+        c = player.CharacterAdded:Wait()
+    end
+    return c
+end
+
+-- EXE detection using CHARACTER ATTRIBUTE
+local function getNearestEXE(root)
+    local nearest = nil
+    local nearestDist = math.huge
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local c = plr.Character
+            if c and c:FindFirstChild("HumanoidRootPart") then
+
+                local teamAttr = c:GetAttribute("team") or c:GetAttribute("Team")
+
+                if teamAttr == "EXE" then
+                    local hrp = c.HumanoidRootPart
+                    local d = (hrp.Position - root.Position).Magnitude
+                    if d < nearestDist then
+                        nearestDist = d
+                        nearest = hrp
+                    end
+                end
+            end
+        end
+    end
+
+    return nearest
+end
+
+local function waitGrounded(hum)
+    local start = tick()
+    local groundedStart = nil
+
+    while tick() - start <= 3 do
+        if hum.FloorMaterial ~= Enum.Material.Air then
+            if not groundedStart then
+                groundedStart = tick()
+            elseif tick() - groundedStart >= 0.2 then
+                return true
+            end
+        else
+            groundedStart = nil
+        end
+        RunService.RenderStepped:Wait()
+    end
+
+    return false
+end
+
+UIS.InputBegan:Connect(function(input, gp)
+    if gp or input.KeyCode ~= Enum.KeyCode.E or busy then return end
+    busy = true
+
+    local char = getChar()
+    local root = char:WaitForChild("HumanoidRootPart")
+    local hum = char:WaitForChild("Humanoid")
+
+    -- grounded check
+    if not waitGrounded(hum) then
+        busy = false
+        return
+    end
+
+    -- RISE 15 studs
+    do
+        local startPos = root.Position
+        local endPos = startPos + Vector3.new(0, risingHeight, 0)
+        local startTime = tick()
+
+        while true do
+            local dt = RunService.RenderStepped:Wait()
+            local t = (tick() - startTime) / risingTime
+            if t >= 1 then
+                root.CFrame = CFrame.new(endPos)
+                root.AssemblyLinearVelocity = Vector3.zero
+                break
+            end
+
+            local newPos = startPos:Lerp(endPos, t)
+            root.CFrame = CFrame.new(newPos)
+            root.AssemblyLinearVelocity = Vector3.zero
+        end
+    end
+
+    -- FIND EXE ANYWHERE
+    local target = getNearestEXE(root)
+    if not target then
+        busy = false
+        return
+    end
+
+    -- FOLLOW EXE FOR 2 SECONDS (stick if reached early)
+    local followStart = tick()
+    local reached = false
+    local lastLook = root.CFrame.LookVector
+
+    while tick() - followStart <= followDuration do
+        if not target.Parent then break end
+
+        local pos = root.Position
+        local goal = target.Position
+        local diff = goal - pos
+        local dist = diff.Magnitude
+
+        if dist <= stopDist then
+            reached = true
+        end
+
+        local dt = RunService.RenderStepped:Wait()
+
+        if not reached then
+            -- Move toward target
+            local dir = diff.Unit
+            local newPos = pos + dir * flySpeed * dt
+            root.CFrame = CFrame.new(newPos, goal)
+            lastLook = root.CFrame.LookVector
+        else
+            -- CONTINUOUS STICK: update every frame
+            root.CFrame = CFrame.new(goal, goal + lastLook)
+        end
+
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    busy = false
+end)
