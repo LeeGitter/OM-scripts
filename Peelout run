@@ -1,0 +1,39 @@
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+
+local RUN_ANIM_ID = "rbxassetid://122414915357020"
+local runTrack = nil
+
+-- reload animation on respawn
+player.CharacterAdded:Connect(function(c)
+    char = c
+    hum = c:WaitForChild("Humanoid")
+    runTrack = nil
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not hum then return end
+
+    local moving = hum.MoveDirection.Magnitude > 0
+    local grounded = hum.FloorMaterial ~= Enum.Material.Air
+    local fast = hum.WalkSpeed > 20
+
+    if moving and grounded and fast then
+        if not runTrack then
+            local anim = Instance.new("Animation")
+            anim.AnimationId = RUN_ANIM_ID
+            runTrack = hum:LoadAnimation(anim)
+            runTrack.Priority = Enum.AnimationPriority.Movement
+            runTrack:Play()
+        end
+    else
+        if runTrack then
+            runTrack:Stop()
+            runTrack = nil
+        end
+    end
+end)
