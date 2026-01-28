@@ -5,11 +5,20 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local busy = false
 
+-- AUTO‑DISABLE ON RESPAWN
+local respawnConn
+respawnConn = player.CharacterAdded:Connect(function()
+    if respawnConn then
+        respawnConn:Disconnect()
+    end
+    script.Disabled = true
+end)
+
 local risingHeight = 15
 local risingTime = 0.3
-local flySpeed = 150 -- 3x speed
+local flySpeed = 150
 local stopDist = 2
-local followDuration = 2 -- seconds
+local followDuration = 2
 
 local function getChar()
     local c = player.Character
@@ -19,7 +28,6 @@ local function getChar()
     return c
 end
 
--- EXE detection using CHARACTER ATTRIBUTE
 local function getNearestEXE(root)
     local nearest = nil
     local nearestDist = math.huge
@@ -28,9 +36,7 @@ local function getNearestEXE(root)
         if plr ~= player then
             local c = plr.Character
             if c and c:FindFirstChild("HumanoidRootPart") then
-
                 local teamAttr = c:GetAttribute("team") or c:GetAttribute("Team")
-
                 if teamAttr == "EXE" then
                     local hrp = c.HumanoidRootPart
                     local d = (hrp.Position - root.Position).Magnitude
@@ -74,13 +80,11 @@ UIS.InputBegan:Connect(function(input, gp)
     local root = char:WaitForChild("HumanoidRootPart")
     local hum = char:WaitForChild("Humanoid")
 
-    -- grounded check
     if not waitGrounded(hum) then
         busy = false
         return
     end
 
-    -- RISE 15 studs
     do
         local startPos = root.Position
         local endPos = startPos + Vector3.new(0, risingHeight, 0)
@@ -101,14 +105,12 @@ UIS.InputBegan:Connect(function(input, gp)
         end
     end
 
-    -- FIND EXE ANYWHERE
     local target = getNearestEXE(root)
     if not target then
         busy = false
         return
     end
 
-    -- FOLLOW EXE FOR 2 SECONDS (stick if reached early)
     local followStart = tick()
     local reached = false
     local lastLook = root.CFrame.LookVector
@@ -128,13 +130,11 @@ UIS.InputBegan:Connect(function(input, gp)
         local dt = RunService.RenderStepped:Wait()
 
         if not reached then
-            -- Move toward target
             local dir = diff.Unit
             local newPos = pos + dir * flySpeed * dt
             root.CFrame = CFrame.new(newPos, goal)
             lastLook = root.CFrame.LookVector
         else
-            -- CONTINUOUS STICK: update every frame
             root.CFrame = CFrame.new(goal, goal + lastLook)
         end
 
