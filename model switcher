@@ -1,12 +1,13 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-local MODEL_ID = 83570032909483
+local MODEL_ID = 81925598549837
 local shadowModel = nil
 local currentAnimation = nil
 local lastGroundState = true
@@ -14,10 +15,8 @@ local lastYPosition = 0
 local animator = nil
 local heartbeatConnection = nil
 
---========================================================
---  YOUR ANIMSAVE OBJECTVALUE CONTAINER
---========================================================
-local animsave = game:GetService("ReplicatedStorage"):WaitForChild("animsave")
+-- CHANGE THIS PATH IF NEEDED
+local animsave = ReplicatedStorage:WaitForChild("animsave")
 
 --========================================================
 --  ANIMATION TABLE (file = ObjectValue name)
@@ -40,28 +39,24 @@ local STATE_ANIMATIONS = {
 }
 
 --========================================================
---  LOAD KEYFRAMESEQUENCE FROM OBJECTVALUE
+--  LOAD TRACK FROM OBJECTVALUE (Value MUST be Animation)
 --========================================================
 local function loadTrackFromFile(animName, animData)
     if not animator then return end
 
     local obj = animsave:FindFirstChild(animData.file)
     if not obj or not obj:IsA("ObjectValue") or not obj.Value then
-        warn("Missing ObjectValue animation:", animData.file)
+        warn("Missing ObjectValue or Value for animation:", animData.file)
         return
     end
 
-    local seq = obj.Value
-    if not seq:IsA("KeyframeSequence") then
-        warn("Invalid KeyframeSequence for:", animData.file)
+    local animInstance = obj.Value
+    if not animInstance:IsA("Animation") then
+        warn("ObjectValue.Value is not an Animation for:", animData.file)
         return
     end
 
-    local anim = Instance.new("Animation")
-    anim.AnimationId = "" -- local sequence
-    anim.Parent = character
-
-    local track = animator:LoadAnimation(anim)
+    local track = animator:LoadAnimation(animInstance)
     track.Looped = animData.shouldLoop
 
     if animData.speed then
@@ -257,7 +252,7 @@ local function init()
         loadModel()
     end)
 
-    spawn(function()
+    task.spawn(function()
         local ok, remoteFunction = pcall(function()
             return player:WaitForChild("PlayerGui"):WaitForChild("Round"):WaitForChild("Game"):WaitForChild("RemoteFunction")
         end)
