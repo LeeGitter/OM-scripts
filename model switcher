@@ -16,7 +16,7 @@ local heartbeatConnection = nil
 
 local STATE_ANIMATIONS = {
     default = {
-        Idle = {id = "rbxassetid://101535052028184", track = nil, shouldLoop = true},
+        Idle = {id = "rbxassetid://75739082381837", track = nil, shouldLoop = true},
         Walk = {id = "rbxassetid://83638241246562", track = nil, shouldLoop = true},
         Run = {id = "rbxassetid://111832051535988", track = nil, shouldLoop = true, speed = 2},
         Jump = {id = "rbxassetid://131035860836096", track = nil, shouldLoop = false},
