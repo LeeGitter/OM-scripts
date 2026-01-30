@@ -1,33 +1,9 @@
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
--- TRACK EVERYTHING THIS SCRIPT CREATES
-local created = {}
-
-local function track(obj)
-    if obj then table.insert(created, obj) end
-    return obj
-end
-
--- CLEANUP + DISABLE ON RESPAWN
-player.CharacterAdded:Connect(function()
-    -- Destroy everything this script spawned
-    for _, obj in ipairs(created) do
-        if obj and obj.Destroy then
-            pcall(function() obj:Destroy() end)
-        end
-    end
-
-    -- Disable this script permanently after respawn
-    script.Disabled = true
-end)
-
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local SCRIPT_VERSION = 6
+local SCRIPT_VERSION = 6.2
 
 local function createWaitingText()
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -99,7 +75,7 @@ local function playChaosEmeraldIntro(loadRestCallback)
 	local char = player.Character or player.CharacterAdded:Wait()
 	local rootPart = char:WaitForChild("HumanoidRootPart")
 
-	local chaosEmeraldsId = 132942718178268
+	local chaosEmeraldsId = 127338011222921
 	local success, objects = pcall(game.GetObjects, game, "rbxassetid://" .. chaosEmeraldsId)
 	if not success or #objects == 0 then
 		warn("FTL CHAOS EMERALDS")
@@ -127,9 +103,9 @@ local function playChaosEmeraldIntro(loadRestCallback)
 		emerald.Position = rootPart.Position + Vector3.new(x, 2, z)
 	end
 
-	local spinSpeed = 1
-	local maxSpinSpeed = 10
-	local spinAcceleration = 1.8
+	local spinSpeed = 0.2
+	local maxSpinSpeed = 3
+	local spinAcceleration = 0.6
 	local spinTime = 0
 	local maxSpinTime = 10
 
@@ -1643,7 +1619,7 @@ local function loadRest()
 			"RLeg1","RLeg2","RLeg3","RLeg4","RLeg5",
 			"left backspike","right backspike","tail"
 		}
-		local assetId = "93662694559525"
+		local assetId = "79631002827506"
 		local function replaceViewportModel()
 			local ok, objects = pcall(game.GetObjects, game, "rbxassetid://" .. assetId)
 			if not ok or #objects == 0 then
@@ -1663,7 +1639,7 @@ local function loadRest()
 			end
 			local viewportRootPart = viewportModel:FindFirstChild("HumanoidRootPart")
 			if viewportRootPart then
-				newModel:PivotTo(viewportRootPart.CFrame * CFrame.new(0, 1.4, 0) * CFrame.Angles(math.rad(185), math.rad(200), 0))
+				newModel:PivotTo(viewportRootPart.CFrame * CFrame.new(0, 0, 0) * CFrame.Angles(math.rad(0), math.rad(000), 0))
 				local primaryPart = newModel.PrimaryPart or newModel:FindFirstChildWhichIsA("BasePart")
 				if primaryPart then
 					local weld = Instance.new("WeldConstraint")
@@ -1679,7 +1655,7 @@ local function loadRest()
 		local viewportHumanoid = viewportModel:FindFirstChild("Humanoid")
 		local currentViewportAnimation = nil
 		local viewportAnimations = {
-			Idle = {id = "rbxassetid://107101041474499", track = nil, shouldLoop = true},
+			Idle = {id = "rbxassetid://86229317461320", track = nil, shouldLoop = true},
 			Walk = {id = "rbxassetid://124016876172487", track = nil, shouldLoop = true},
 			Run = {id = "rbxassetid://102091744008058", track = nil, shouldLoop = true},
 			Jump = {id = "rbxassetid://125236763187476", track = nil, shouldLoop = false},
@@ -1956,14 +1932,14 @@ local function loadRest()
 	RunService.Heartbeat:Connect(disableAnimations)
 
 	local ANIMATIONS = {
-		Idle = {id = "rbxassetid://107101041474499", track = nil, shouldLoop = true},
-		Walk = {id = "rbxassetid://124016876172487", track = nil, shouldLoop = true},
-		Run = {id = "rbxassetid://102091744008058", track = nil, shouldLoop = true},
+		Idle = {id = "rbxassetid://86229317461320", track = nil, shouldLoop = true},
+		Walk = {id = "rbxassetid://72886170821280", track = nil, shouldLoop = true},
+		Run = {id = "rbxassetid://79543048704883", track = nil, shouldLoop = true},
 		Jump = {id = "rbxassetid://125236763187476", track = nil, shouldLoop = false},
-		Fall = {id = "rbxassetid://76641742723792", track = nil, shouldLoop = true},
-		FlyIdle = {id = "rbxassetid://107101041474499", track = nil, shouldLoop = true},
-		FlySlow = {id = "rbxassetid://124016876172487", track = nil, shouldLoop = true},
-		FlyFast = {id = "rbxassetid://137747804761111", track = nil, shouldLoop = true}
+		Fall = {id = "rbxassetid://86229317461320", track = nil, shouldLoop = true},
+		FlyIdle = {id = "rbxassetid://86229317461320", track = nil, shouldLoop = true},
+		FlySlow = {id = "rbxassetid://86229317461320", track = nil, shouldLoop = true},
+		FlyFast = {id = "rbxassetid://86229317461320", track = nil, shouldLoop = true}
 	}
 
 	local function loadAnimation(animName)
@@ -2148,7 +2124,7 @@ local function loadRest()
 	local Players = game:GetService("Players")
 	local RunService = game:GetService("RunService")
 	local player = Players.LocalPlayer
-	local ASSET_ID = 93662694559525
+	local ASSET_ID = 79631002827506
 	local currentConnection = nil
 
 	local function loadAsset(id)
@@ -2211,6 +2187,10 @@ local function loadRest()
 		local relativeCFrames = {}
 		if normal and normal:IsA("BasePart") then
 			faceParts = {
+				Cube001 = mdl:FindFirstChild("Cube.001", true),
+				Cube002 = mdl:FindFirstChild("Cube.002", true),
+				Cube003 = mdl:FindFirstChild("Cube.003", true),
+				Cube004 = mdl:FindFirstChild("Cube.004", true),
 				eye1 = mdl:FindFirstChild("eye1", true),
 				eye2 = mdl:FindFirstChild("eye2", true),
 				muzzl = mdl:FindFirstChild("muzzl", true),
