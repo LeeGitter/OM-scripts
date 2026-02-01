@@ -11,15 +11,23 @@ local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 local flymetertext = true
-local flyMax = 45
+
+-- CHANGED: stamina capacity
+local flyMax = 25
 local flyMeter = flyMax
-local flySpeedMax = 25
-local specialFlySpeed = 140
-local flyAccel = 70
-local flyDecel = 80
+
+-- CHANGED: speed reduced to 1/3
+local flySpeedMax = 58
+local specialFlySpeed = 140 -- untouched
+local flyAccel = 23
+local flyDecel = 27
+
 local flyDrainMax = 4
-local flyDrainIdle = 10.9 / 20.4
-local flyDrainSpeed = 20
+
+-- CHANGED: stamina usage halved
+local flyDrainIdle = (10.9 / 20.4) / 2
+local flyDrainSpeed = 10
+
 local flyDrainMinSpeed = 100
 local flyBarTween = nil
 local flyBarShowTime = 0.3
@@ -72,7 +80,10 @@ flyBarBG.Parent = flyBarFrame
 local flyBar = Instance.new("Frame")
 flyBar.Size = UDim2.new(1, 0, 1, 0)
 flyBar.Position = UDim2.new(0, 0, 1, 0)
-flyBar.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+
+-- CHANGED: color to #F2C354
+flyBar.BackgroundColor3 = Color3.fromRGB(242, 195, 84)
+
 flyBar.BorderSizePixel = 0
 flyBar.BackgroundTransparency = 0.1
 flyBar.Parent = flyBarFrame
@@ -122,6 +133,26 @@ local bv = nil
 local bg = nil
 local flyInertiaDecel = 6
 
+-- ANIMATIONS ADDED
+local animFlyIdle = Instance.new("Animation")
+animFlyIdle.AnimationId = "rbxassetid://89515158858178"
+
+local animFlyMove = Instance.new("Animation")
+animFlyMove.AnimationId = "rbxassetid://134795550846208"
+
+local trackIdle = humanoid:LoadAnimation(animFlyIdle)
+local trackMove = humanoid:LoadAnimation(animFlyMove)
+
+local function playFlyAnim(moving)
+    if moving then
+        trackIdle:Stop()
+        if not trackMove.IsPlaying then trackMove:Play() end
+    else
+        trackMove:Stop()
+        if not trackIdle.IsPlaying then trackIdle:Play() end
+    end
+end
+
 local function flyStart()
     if flying or flyMeter <= 0 then return end
 
@@ -161,34 +192,27 @@ local function flyStart()
         if move.Magnitude > 0 then move = move.Unit end
 
         local moving = move.Magnitude > 0
+        playFlyAnim(moving)
 
         if moving then
             flySpeed = math.min(flySpeed + flyAccel * dt, flySpeedMax)
             bv.Velocity = move * flySpeed
-            bg.CFrame = CFrame.lookAt(Vector3.new(), cam.CFrame.LookVector * Vector3.new(1,0,1) + Vector3.new(0, move.Y, 0))
+            bg.CFrame = CFrame.lookAt(humanoidRootPart.Position, humanoidRootPart.Position + cam.CFrame.LookVector)
         else
             flySpeed = math.max(flySpeed - flyDecel * dt, 0)
             bv.Velocity = bv.Velocity:Lerp(Vector3.new(), math.clamp(flyInertiaDecel * dt, 0, 1))
         end
 
-        local drain = 0
-        if flySpeed >= flyDrainMinSpeed then
-            drain = flyDrainSpeed * dt
-        else
-            drain = flyDrainIdle * dt
-        end
-
+        local drain = (flySpeed >= flyDrainMinSpeed) and (flyDrainSpeed * dt) or (flyDrainIdle * dt)
         flyMeter = math.max(flyMeter - drain, 0)
         updateFlyBar()
 
         if flyMeter <= 0 then
             flying = false
-            if not flyRegenCooldown then
-                flyRegenCooldown = true
-                task.delay(flyRegenCooldownTime, function()
-                    flyRegenCooldown = false
-                end)
-            end
+            flyRegenCooldown = true
+            task.delay(flyRegenCooldownTime, function()
+                flyRegenCooldown = false
+            end)
         end
     end)
 end
@@ -201,6 +225,10 @@ local function flyCancel()
         if bv then bv:Destroy() bv = nil end
         if bg then bg:Destroy() bg = nil end
         humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+
+        -- stop animations
+        trackIdle:Stop()
+        trackMove:Stop()
     end
 end
 
