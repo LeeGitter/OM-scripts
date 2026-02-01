@@ -11,9 +11,9 @@ local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 local flymetertext = true
-local flyMax = 200
+local flyMax = 45
 local flyMeter = flyMax
-local flySpeedMax = 175
+local flySpeedMax = 25
 local specialFlySpeed = 140
 local flyAccel = 70
 local flyDecel = 80
