@@ -236,7 +236,7 @@ local function rechargeFlyMeter()
     task.spawn(function()
         while true do
             if not flying and flyMeter < flyMax and not flyRegenCooldown then
-                flyMeter = math.min(flyMeter + flyDrainIdle * 6, flyMax)
+                flyMeter = math.min(flyMeter + flyDrainIdle * 2, flyMax)
                 updateFlyBar()
             end
             task.wait(0.5)
