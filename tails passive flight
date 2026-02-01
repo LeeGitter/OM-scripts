@@ -7,9 +7,17 @@ local char = player.Character or player.CharacterAdded:Wait()
 local root = char:WaitForChild("HumanoidRootPart")
 local hum = char:WaitForChild("Humanoid")
 
--- animations
+player.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    root = char:WaitForChild("HumanoidRootPart")
+    hum = char:WaitForChild("Humanoid")
+end)
+
+-----------------------------------------------------
+-- ANIMATIONS (ALL THREE USE SAME ID)
+-----------------------------------------------------
 local animIdle = Instance.new("Animation")
-animIdle.AnimationId = "rbxassetid://134795550846208"
+animIdle.AnimationId = "rbxassetid://89515158858178"
 
 local animSlow = Instance.new("Animation")
 animSlow.AnimationId = "rbxassetid://134795550846208"
@@ -21,67 +29,106 @@ local trackIdle = hum:LoadAnimation(animIdle)
 local trackSlow = hum:LoadAnimation(animSlow)
 local trackFast = hum:LoadAnimation(animFast)
 
--- stamina
-local flyMax = 100
-local flyMeter = flyMax
-local flyDrain = 50
-local flyRegen = 35
+-----------------------------------------------------
+-- CONFIG (EXACT ORIGINAL VALUES)
+-----------------------------------------------------
+local CONFIG = {
+    FlyDuration = 15,
+    FlyCooldown = 25,
+}
 
--- state
+-----------------------------------------------------
+-- STATE
+-----------------------------------------------------
 local flying = false
 local flyVel = nil
 local flyGyro = nil
 
--- ui
+local flyMeter = CONFIG.FlyDuration
+local flyCooldown = false
+
+-----------------------------------------------------
+-- UI PANEL (EXACT ORIGINAL PANEL, EMPTY EXCEPT STAMINA BAR)
+-----------------------------------------------------
 local gui = Instance.new("ScreenGui")
-gui.Name = "FlyUI"
+gui.Name = "BronzeFlyGui"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
 local bar = Instance.new("Frame")
-bar.Size = UDim2.new(0, 200, 0, 20)
-bar.Position = UDim2.new(0.5, -100, 0.9, 0)
-bar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+if isMobile then
+    bar.Size = UDim2.new(0,144,0,192)
+    bar.Position = UDim2.new(0,8,0.5,-96 - 40)
+else
+    bar.Size = UDim2.new(0,300,0,440)
+    bar.Position = UDim2.new(0,20,0.5,-220)
+end
+bar.BackgroundTransparency = 1
 bar.Parent = gui
 
 local fill = Instance.new("Frame")
-fill.Size = UDim2.new(1, 0, 1, 0)
-fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+fill.Size = UDim2.new(1,0,1,0)
+fill.BackgroundColor3 = Color3.fromRGB(0,170,255)
+fill.BorderSizePixel = 0
 fill.Parent = bar
 
--- mobile toggle
-local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-local mobileToggle = nil
+-----------------------------------------------------
+-- MOBILE FLY TOGGLE (EXACT ORIGINAL)
+-----------------------------------------------------
+local flyToggleButton = nil
+local flyToggleName = nil
 
 if isMobile then
-    mobileToggle = Instance.new("TextButton")
-    mobileToggle.Size = UDim2.new(0, 80, 0, 40)
-    mobileToggle.Position = UDim2.new(0.8, 0, 0.8, 0)
-    mobileToggle.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-    mobileToggle.Text = "Fly OFF"
-    mobileToggle.Parent = gui
+    flyToggleButton = Instance.new("ImageButton")
+    flyToggleButton.Size = UDim2.new(0,32,0,32)
+    flyToggleButton.Position = UDim2.new(0, (32+4)*3, 0, 0)
+    flyToggleButton.BackgroundTransparency = 1
+    flyToggleButton.Image = "rbxassetid://72410974345101"
+    flyToggleButton.ImageColor3 = Color3.fromRGB(0,120,255)
+    flyToggleButton.Parent = bar
+
+    flyToggleName = Instance.new("TextLabel")
+    flyToggleName.Size = UDim2.new(1,0,0.3,0)
+    flyToggleName.Position = UDim2.new(0,0,0.9,0)
+    flyToggleName.BackgroundTransparency = 1
+    flyToggleName.Text = "Fly: OFF"
+    flyToggleName.TextColor3 = Color3.fromRGB(0,120,255)
+    flyToggleName.Font = Enum.Font.GothamBold
+    flyToggleName.TextScaled = true
+    flyToggleName.Parent = flyToggleButton
 end
 
--- start flight
+-----------------------------------------------------
+-- FLIGHT START
+-----------------------------------------------------
 local function startFly()
     if flying then return end
+    if flyCooldown then return end
     if flyMeter <= 0 then return end
 
     flying = true
 
     flyVel = Instance.new("BodyVelocity")
-    flyVel.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    flyVel.MaxForce = Vector3.new(1e6,1e6,1e6)
     flyVel.Parent = root
 
     flyGyro = Instance.new("BodyGyro")
-    flyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+    flyGyro.MaxTorque = Vector3.new(1e6,1e6,1e6)
     flyGyro.P = 20000
     flyGyro.Parent = root
 
     trackIdle:Play()
+
+    if flyToggleName then
+        flyToggleName.Text = "Fly: ON"
+    end
 end
 
--- stop flight
+-----------------------------------------------------
+-- FLIGHT STOP
+-----------------------------------------------------
 local function stopFly()
     if not flying then return end
     flying = false
@@ -92,70 +139,101 @@ local function stopFly()
     trackIdle:Stop()
     trackSlow:Stop()
     trackFast:Stop()
+
+    if flyToggleName then
+        flyToggleName.Text = "Fly: OFF"
+    end
 end
 
--- input
-local flyKeyDown = false
+-----------------------------------------------------
+-- DOUBLE JUMP ACTIVATION (EXACT)
+-----------------------------------------------------
+local jumpCount = 0
+local lastJumpTime = 0
 
-UserInputService.InputBegan:Connect(function(i, g)
-    if g then return end
-    if i.KeyCode == Enum.KeyCode.Space then
-        flyKeyDown = true
-        startFly()
+hum.StateChanged:Connect(function(old, new)
+    if new == Enum.HumanoidStateType.Jumping then
+        local now = tick()
+
+        if now - lastJumpTime > 0.35 then
+            jumpCount = 0
+        end
+
+        jumpCount += 1
+        lastJumpTime = now
+
+        if jumpCount == 2 then
+            startFly()
+        end
+    end
+
+    if new == Enum.HumanoidStateType.Landed then
+        jumpCount = 0
     end
 end)
 
-UserInputService.InputEnded:Connect(function(i)
-    if i.KeyCode == Enum.KeyCode.Space then
-        flyKeyDown = false
-        stopFly()
-    end
-end)
-
-if mobileToggle then
-    mobileToggle.MouseButton1Click:Connect(function()
+if flyToggleButton then
+    flyToggleButton.MouseButton1Click:Connect(function()
         if flying then
             stopFly()
-            mobileToggle.Text = "Fly OFF"
         else
             startFly()
-            mobileToggle.Text = "Fly ON"
         end
     end)
 end
 
--- main loop
+-----------------------------------------------------
+-- ORIGINAL MOVEMENT OVERRIDE (EXACT)
+-----------------------------------------------------
+RunService.Stepped:Connect(function(_,delta)
+    if not flying then
+        if hum.MoveDirection.Magnitude > 0 then
+            char:PivotTo(char:GetPivot() + hum.MoveDirection * delta * 20)
+        end
+    end
+end)
+
+-----------------------------------------------------
+-- MAIN LOOP (EXACT STAMINA + COOLDOWN)
+-----------------------------------------------------
 RunService.Heartbeat:Connect(function(dt)
-    -- stamina
+
     if flying then
-        flyMeter -= flyDrain * dt
+        flyMeter -= dt
         if flyMeter <= 0 then
             flyMeter = 0
             stopFly()
+            flyCooldown = true
+
+            task.spawn(function()
+                task.wait(CONFIG.FlyCooldown)
+                flyCooldown = false
+            end)
         end
     else
-        flyMeter = math.min(flyMax, flyMeter + flyRegen * dt)
+        if not flyCooldown then
+            flyMeter = math.min(CONFIG.FlyDuration, flyMeter + dt)
+        end
     end
 
-    fill.Size = UDim2.new(flyMeter / flyMax, 0, 1, 0)
+    fill.Size = UDim2.new(1,0, flyMeter / CONFIG.FlyDuration, 0)
 
-    -- flight physics
     if flying and flyVel and flyGyro then
         local cam = workspace.CurrentCamera
         local dir = cam.CFrame.LookVector
 
-        flyVel.Velocity = dir * 35
+        flyVel.Velocity = dir * 25
         flyGyro.CFrame = CFrame.new(root.Position, root.Position + dir)
 
         local speed = flyVel.Velocity.Magnitude
 
-        if speed < 15 then
+        if speed < 10 then
             if not trackIdle.IsPlaying then
                 trackSlow:Stop()
                 trackFast:Stop()
                 trackIdle:Play()
             end
-        elseif speed < 35 then
+        elseif speed < 25 then
             if not trackSlow.IsPlaying then
                 trackIdle:Stop()
                 trackFast:Stop()
