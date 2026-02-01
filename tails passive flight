@@ -13,22 +13,22 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 local flymetertext = true
 
 -- CHANGED: stamina capacity
-local flyMax = 25
+local flyMax = 50
 local flyMeter = flyMax
 
 -- CHANGED: speed reduced to 1/3
-local flySpeedMax = 35
+local flySpeedMax = 55
 local specialFlySpeed = 140 -- untouched
-local flyAccel = 15
-local flyDecel = 17
+local flyAccel = 25
+local flyDecel = 30
 
 local flyDrainMax = 4
 
 -- CHANGED: stamina usage halved
 local flyDrainIdle = 15
-local flyDrainSpeed = 30
+local flyDrainSpeed = 20
 
-local flyDrainMinSpeed = 100
+local flyDrainMinSpeed = 25
 local flyBarTween = nil
 local flyBarShowTime = 0.3
 local flyBarHideTime = 0.4
@@ -36,7 +36,7 @@ local jumpInputActive = false
 local jumpInputStart = 0
 local jumpHoldThreshold = 0.3
 local flyRegenCooldown = false
-local flyRegenCooldownTime = 3
+local flyRegenCooldownTime = 15
 
 local flyGui = Instance.new("BillboardGui")
 flyGui.Name = "FlyMeterGui"
