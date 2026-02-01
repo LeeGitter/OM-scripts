@@ -144,18 +144,18 @@ RunService.Heartbeat:Connect(function(dt)
         local cam = workspace.CurrentCamera
         local dir = cam.CFrame.LookVector
 
-        flyVel.Velocity = dir * 80
+        flyVel.Velocity = dir * 35
         flyGyro.CFrame = CFrame.new(root.Position, root.Position + dir)
 
         local speed = flyVel.Velocity.Magnitude
 
-        if speed < 40 then
+        if speed < 15 then
             if not trackIdle.IsPlaying then
                 trackSlow:Stop()
                 trackFast:Stop()
                 trackIdle:Play()
             end
-        elseif speed < 80 then
+        elseif speed < 35 then
             if not trackSlow.IsPlaying then
                 trackIdle:Stop()
                 trackFast:Stop()
