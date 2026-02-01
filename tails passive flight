@@ -1,0 +1,172 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local hum = char:WaitForChild("Humanoid")
+
+-- animations
+local animIdle = Instance.new("Animation")
+animIdle.AnimationId = "rbxassetid://134795550846208"
+
+local animSlow = Instance.new("Animation")
+animSlow.AnimationId = "rbxassetid://134795550846208"
+
+local animFast = Instance.new("Animation")
+animFast.AnimationId = "rbxassetid://134795550846208"
+
+local trackIdle = hum:LoadAnimation(animIdle)
+local trackSlow = hum:LoadAnimation(animSlow)
+local trackFast = hum:LoadAnimation(animFast)
+
+-- stamina
+local flyMax = 100
+local flyMeter = flyMax
+local flyDrain = 50
+local flyRegen = 35
+
+-- state
+local flying = false
+local flyVel = nil
+local flyGyro = nil
+
+-- ui
+local gui = Instance.new("ScreenGui")
+gui.Name = "FlyUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local bar = Instance.new("Frame")
+bar.Size = UDim2.new(0, 200, 0, 20)
+bar.Position = UDim2.new(0.5, -100, 0.9, 0)
+bar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+bar.Parent = gui
+
+local fill = Instance.new("Frame")
+fill.Size = UDim2.new(1, 0, 1, 0)
+fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+fill.Parent = bar
+
+-- mobile toggle
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+local mobileToggle = nil
+
+if isMobile then
+    mobileToggle = Instance.new("TextButton")
+    mobileToggle.Size = UDim2.new(0, 80, 0, 40)
+    mobileToggle.Position = UDim2.new(0.8, 0, 0.8, 0)
+    mobileToggle.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    mobileToggle.Text = "Fly OFF"
+    mobileToggle.Parent = gui
+end
+
+-- start flight
+local function startFly()
+    if flying then return end
+    if flyMeter <= 0 then return end
+
+    flying = true
+
+    flyVel = Instance.new("BodyVelocity")
+    flyVel.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    flyVel.Parent = root
+
+    flyGyro = Instance.new("BodyGyro")
+    flyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+    flyGyro.P = 20000
+    flyGyro.Parent = root
+
+    trackIdle:Play()
+end
+
+-- stop flight
+local function stopFly()
+    if not flying then return end
+    flying = false
+
+    if flyVel then flyVel:Destroy() flyVel = nil end
+    if flyGyro then flyGyro:Destroy() flyGyro = nil end
+
+    trackIdle:Stop()
+    trackSlow:Stop()
+    trackFast:Stop()
+end
+
+-- input
+local flyKeyDown = false
+
+UserInputService.InputBegan:Connect(function(i, g)
+    if g then return end
+    if i.KeyCode == Enum.KeyCode.Space then
+        flyKeyDown = true
+        startFly()
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(i)
+    if i.KeyCode == Enum.KeyCode.Space then
+        flyKeyDown = false
+        stopFly()
+    end
+end)
+
+if mobileToggle then
+    mobileToggle.MouseButton1Click:Connect(function()
+        if flying then
+            stopFly()
+            mobileToggle.Text = "Fly OFF"
+        else
+            startFly()
+            mobileToggle.Text = "Fly ON"
+        end
+    end)
+end
+
+-- main loop
+RunService.Heartbeat:Connect(function(dt)
+    -- stamina
+    if flying then
+        flyMeter -= flyDrain * dt
+        if flyMeter <= 0 then
+            flyMeter = 0
+            stopFly()
+        end
+    else
+        flyMeter = math.min(flyMax, flyMeter + flyRegen * dt)
+    end
+
+    fill.Size = UDim2.new(flyMeter / flyMax, 0, 1, 0)
+
+    -- flight physics
+    if flying and flyVel and flyGyro then
+        local cam = workspace.CurrentCamera
+        local dir = cam.CFrame.LookVector
+
+        flyVel.Velocity = dir * 80
+        flyGyro.CFrame = CFrame.new(root.Position, root.Position + dir)
+
+        local speed = flyVel.Velocity.Magnitude
+
+        if speed < 40 then
+            if not trackIdle.IsPlaying then
+                trackSlow:Stop()
+                trackFast:Stop()
+                trackIdle:Play()
+            end
+        elseif speed < 80 then
+            if not trackSlow.IsPlaying then
+                trackIdle:Stop()
+                trackFast:Stop()
+                trackSlow:Play()
+            end
+        else
+            if not trackFast.IsPlaying then
+                trackIdle:Stop()
+                trackSlow:Stop()
+                trackFast:Play()
+            end
+        end
+    end
+end)
