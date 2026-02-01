@@ -17,16 +17,16 @@ local flyMax = 25
 local flyMeter = flyMax
 
 -- CHANGED: speed reduced to 1/3
-local flySpeedMax = 58
+local flySpeedMax = 35
 local specialFlySpeed = 140 -- untouched
-local flyAccel = 23
-local flyDecel = 27
+local flyAccel = 15
+local flyDecel = 17
 
 local flyDrainMax = 4
 
 -- CHANGED: stamina usage halved
-local flyDrainIdle = (10.9 / 20.4) / 2
-local flyDrainSpeed = 10
+local flyDrainIdle = 15
+local flyDrainSpeed = 30
 
 local flyDrainMinSpeed = 100
 local flyBarTween = nil
