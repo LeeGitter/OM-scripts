@@ -13,7 +13,7 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 local flymetertext = true
 
 -- CHANGED: stamina capacity
-local flyMax = 50
+local flyMax = 75
 local flyMeter = flyMax
 
 -- CHANGED: speed reduced to 1/3
