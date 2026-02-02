@@ -17,7 +17,7 @@ local flyMax = 75
 local flyMeter = flyMax
 
 -- CHANGED: speed reduced to 1/3
-local flySpeedMax = 55
+local flySpeedMax = 75
 local specialFlySpeed = 140 -- untouched
 local flyAccel = 10
 local flyDecel = 20
