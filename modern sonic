@@ -1,11 +1,11 @@
 local ANIMATIONS = {
-	Idle = {id = "rbxassetid://103492267285940", track = nil, shouldLoop = true},
-	Walk = {id = "rbxassetid://134248401742063", track = nil, shouldLoop = true},
-	Run = {id = "rbxassetid://102154975451616", track = nil, shouldLoop = true},
-	SuperRun = {id = "rbxassetid://140558571239577", track = nil, shouldLoop = true},
-	Jump = {id = "rbxassetid://107775763879802", track = nil, shouldLoop = false},
-	Fall = {id = "rbxassetid://72056988189185", track = nil, shouldLoop = true},
-	PeelCharge = {id = "rbxassetid://95970005202318", track = nil, shouldLoop = true}
+	Idle = {id = "rbxassetid://139287926419194", track = nil, shouldLoop = true},
+	Walk = {id = "rbxassetid://90368028425493", track = nil, shouldLoop = true},
+	Run = {id = "rbxassetid://78362559309616", track = nil, shouldLoop = true},
+	SuperRun = {id = "rbxassetid://78362559309616", track = nil, shouldLoop = true},
+	Jump = {id = "rbxassetid://75190318782982", track = nil, shouldLoop = false},
+	Fall = {id = "rbxassetid://139991039306682", track = nil, shouldLoop = true},
+	PeelCharge = {id = "rbxassetid://139991039306682", track = nil, shouldLoop = true}
 }
 local function loadAsset(id)
 	local ok, objects = pcall(game.GetObjects, game, "rbxassetid://" .. id)
