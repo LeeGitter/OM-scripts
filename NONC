@@ -6,7 +6,7 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-local MODEL_ID = 122115304928609
+local MODEL_ID = 104242815804970
 local shadowModel = nil
 local currentAnimation = nil
 local lastGroundState = true
